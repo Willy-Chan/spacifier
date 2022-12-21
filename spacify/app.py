@@ -1,25 +1,44 @@
-from flask import Flask, render_template, request, flash, redirect, url_for
-from werkzeug.utils import secure_filename
+import imghdr
 import os
+from flask import Flask, render_template, request, redirect, url_for, abort, \
+    send_from_directory
+from werkzeug.utils import secure_filename
+from bkgremove import spacify
 
-app  = Flask(__name__)
+app = Flask(__name__)
+app.config['MAX_CONTENT_LENGTH'] = 2 * 1024 * 1024
+app.config['UPLOAD_EXTENSIONS'] = ['.jpg', '.png', '.gif']
+app.config['UPLOAD_PATH'] = 'uploads'
 
-UPLOAD_FOLDER = './uploads'
-ALLOWED_EXTENSIONS = {'png', 'jpg'}
+def validate_image(stream):
+    header = stream.read(512)
+    stream.seek(0)
+    format = imghdr.what(None, header)
+    if not format:
+        return None
+    return '.' + (format if format != 'jpeg' else 'jpg')
 
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+@app.errorhandler(413)
+def too_large(e):
+    return "File is too large", 413
 
-def allowed_file(filename):
-    return '.' in filename and \
-           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-
-@app.route("/", methods=["POST", "GET"])
+@app.route('/')
 def index():
-    if request.method == 'POST':
+    files = os.listdir(app.config['UPLOAD_PATH'])
+    return render_template('index.html', files=files)
 
-        if request.files:
-            image = request.files["image"]
-            print(image)
-            return redirect(request.url)
+@app.route('/', methods=['POST'])
+def upload_files():
+    uploaded_file = request.files['file']
+    filename = secure_filename(uploaded_file.filename)
+    if filename != '':
+        file_ext = os.path.splitext(filename)[1]
+        if file_ext not in app.config['UPLOAD_EXTENSIONS'] or \
+                file_ext != validate_image(uploaded_file.stream):
+            return "Invalid image", 400
+        uploaded_file.save(os.path.join(app.config['UPLOAD_PATH'], filename))
+    return '', 204
 
-    return render_template("index.html")
+@app.route('/uploads/<filename>')
+def upload(filename):
+    return send_from_directory(app.config['UPLOAD_PATH'], filename)
