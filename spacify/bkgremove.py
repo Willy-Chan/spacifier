@@ -1,7 +1,14 @@
 import cv2
+import os
+import random
 import numpy as np
 
-image = 'C:/Users/Chan/PycharmProjects/GITHUB/spacifier/spacify/static/images/duck.jpg'
+SPACE_IMGS = 'space imgs'
+
+def dice_roll(SPACE_IMGS):
+    print(random.choice(os.listdir(SPACE_IMGS)))
+    return random.choice(os.listdir(SPACE_IMGS))
+
 
 def spacify(image):
     # load image
@@ -34,17 +41,34 @@ def spacify(image):
     result = cv2.cvtColor(result, cv2.COLOR_BGR2BGRA)
     result[:, :, 3] = mask
 
+
     # save resulting masked image
     filename = image.split('.')[0]
     format = '.' + image.split('.')[1]
     cv2.imwrite(filename + '_tspt' + format, result)
 
-    # display result, though it won't show transparency
-    cv2.imshow("INPUT", img)
-    cv2.imshow("GRAY", gray)
-    cv2.imshow("MASK", mask)
-    cv2.imshow("RESULT", result)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+    ##########
 
-spacify(image)
+    # replace transparent pixels with image pixels
+    background = cv2.imread('space imgs' + '/' + dice_roll(SPACE_IMGS), cv2.IMREAD_UNCHANGED)
+    foreground = cv2.imread(f'{filename}_tspt{format}', cv2.IMREAD_UNCHANGED)
+
+    # normalize alpha channels from 0-255 to 0-1
+    alpha_background = background[:,:,3] / 255.0
+    alpha_foreground = foreground[:,:,3] / 255.0
+
+    # set adjusted colors
+    for color in range(0, 3):
+        background[:,:,color] = alpha_foreground * foreground[:,:,color] + \
+                                alpha_background * background[:,:,color] * (1 - alpha_foreground)
+
+    # set adjusted alpha and denormalize back to 0-255
+    background[:,:,3] = (1 - (1 - alpha_foreground) * (1 - alpha_background)) * 255
+    cv2.imwrite(filename + '_tspt' + format, background)
+    ##########
+
+    return f'{filename}_tspt{format}'
+
+if __name__ == '__main__':
+    dice_roll(SPACE_IMGS)
+    spacify('uploads/left.png')

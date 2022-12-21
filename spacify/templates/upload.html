@@ -1,8 +1,5 @@
 <!doctype html>
 <html>
-<hr>
-{% for file in files %}
-<img src="{{ url_for('upload', filename=file) }}" style="width: 64px">
-{% endfor %}
+<img src="{{ url_for('uploads', filename='space.jpg') }}" style="width: 64px">
 </body>
 </html>
