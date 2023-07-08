@@ -1,6 +1,6 @@
+# This application is currently under active development and is not finished! As such, the application has not yet been deployed and will have bugs - be warned!
 # Spacifier
 Spacifier is a Flask application that enables users to upload images and replace the background with a photo taken from space.
-**Note: ** This application is currently under active development and is not finished! As such, the application has not yet been deployed and will have bugs - be warned!
 
 ## Overview
 Spacifier utilizes computer vision and image processing techniques to automatically detect the background in an uploaded image and replace it with a space-themed background. The application leverages the Flask framework to provide a user-friendly interface for uploading and processing images.
